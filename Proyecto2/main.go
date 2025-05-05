@@ -68,7 +68,13 @@ func main() {
 
 	// Configurar CORS
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:8080", "http://3.145.6.97", "http://3.145.6.97:3000"},
+		AllowedOrigins: []string{
+			"http://localhost:3000",
+			"http://localhost:8080",
+			"http://3.145.6.97",
+			"http://3.145.6.97:3000",
+			"http://mia-202200129.s3-website.us-east-2.amazonaws.com",
+		},
 		AllowedMethods:   []string{http.MethodPost, http.MethodOptions},
 		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: false,

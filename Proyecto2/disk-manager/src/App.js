@@ -18,10 +18,12 @@ function App() {
   const referenciaArchivo = useRef(null);
 
    // Determinar la URL del backend según el entorno
+// Determinar la URL del backend según el entorno
   const BACKEND_URL = window.location.hostname.includes('3.145.6.97') || 
-                     window.location.hostname === 'ec2-3-145-6-97.us-east-2.compute.amazonaws.com' 
-                     ? 'http://3.145.6.97:8080' 
-                     : 'http://localhost:8080';
+                    window.location.hostname === 'ec2-3-145-6-97.us-east-2.compute.amazonaws.com' ||
+                    window.location.hostname.includes('s3-website') // Detectar cuando se ejecuta desde S3
+                    ? 'http://3.145.6.97:8080' 
+                    : 'http://localhost:8080';
   
   // Ejecutar comandos genéricos
   const ejecutarComando = async (comando) => {
