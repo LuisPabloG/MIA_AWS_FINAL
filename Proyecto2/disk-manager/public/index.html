@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrador de Sistema de Archivos EXT2/EXT3</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- React y ReactDOM desde CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel para JSX -->
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gradient-to-r from-blue-100 to-gray-100 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    // Configuración dinámica del backend
+    const BACKEND_URL = window.location.hostname.includes('3.145.6.97') || 
+                         window.location.hostname === 'ec2-3-145-6-97.us-east-2.compute.amazonaws.com' 
+                         ? 'http://3.145.6.97:8080' 
+                         : 'http://localhost:8080';
+
+    function App() {
+      const [comandos, setComandos] = useState('');
+      const [salida, setSalida] = useState('');
+      const [estaConectado, setEstaConectado] = useState(false);
+      const [usuarioActual, setUsuarioActual] = useState('');
+      const [idParticionActual, setIdParticionActual] = useState('');
+      const [mostrarModal, setMostrarModal] = useState(false);
+      const [vista, setVista] = useState('terminal');
+      const [discoSeleccionado, setDiscoSeleccionado] = useState(null);
+      const [rutaActual, setRutaActual] = useState('/');
+      const [usuario, setUsuario] = useState('');
+      const [contrasena, setContrasena] = useState('');
+      const [idParticion, setIdParticion] = useState('');
+      const [error, setError] = useState('');
+      const referenciaArchivo = useRef(null);
+
+      // Normalizar rutas para eliminar redundancias
+      const normalizarRuta = (ruta) => {
+        if (!ruta || ruta === '/') return '/';
+        const partes = ruta.split('/').filter(Boolean);
+        const pila = [];
+        for (const parte of partes) {
+          if (parte === '.' || parte === '') continue;
+          if (parte === '..' && pila.length > 0) {
+            pila.pop();
+          } else if (parte !== '..') {
+            pila.push(parte);
+          }
+        }
+        return pila.length === 0 ? '/' : '/' + pila.join('/');
+      };
+
+      // Ejecutar comandos genéricos
+      const ejecutarComando = async (comando) => {
+        try {
+          console.log(`Enviando comando: ${comando} a ${BACKEND_URL}/execute`);
+          const respuesta = await fetch(`${BACKEND_URL}/execute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comandos: comando }),
+          });
+
+          if (!respuesta.ok) {
+            throw new Error(`Error HTTP: ${respuesta.status} ${respuesta.statusText}`);
+          }
+
+          let resultado;
+          try {
+            resultado = await respuesta.json();
+          } catch (e) {
+            const texto = await respuesta.text();
+            console.error(`Respuesta no JSON: ${texto}`);
+            return `Error: Respuesta no es JSON válido: ${texto}`;
+          }
+
+          if (resultado.salida) {
+            return resultado.salida;
+          } else if (resultado.error) {
+            return `Error del servidor: ${resultado.error}`;
+          }
+          return 'Comando ejecutado sin salida';
+        } catch (error) {
+          console.error(`Error en fetch: ${error.message}`);
+          return `Error: ${error.message}. Verifica que el backend esté ejecutándose en ${BACKEND_URL}.`;
+        }
+      };
+
+      // Ejecutar comandos desde la terminal
+      const manejarEjecucion = async () => {
+        if (!comandos.trim()) {
+          setSalida('Error: Ingresa al menos un comando');
+          return;
+        }
+        const resultado = await ejecutarComando(comandos);
+        setSalida(resultado);
+      };
+
+      // Manejar carga de archivo .smia
+      const manejarCargaArchivo = (evento) => {
+        const archivo = evento.target.files[0];
+        if (archivo && archivo.name.endsWith('.smia')) {
+          const lector = new FileReader();
+          lector.onload = (e) => {
+            setComandos(e.target.result);
+          };
+          lector.readAsText(archivo);
+        } else {
+          setSalida('Error: Por favor, carga un archivo .smia válido');
+        }
+      };
+
+      // Activar entrada de archivo
+      const activarEntradaArchivo = () => {
+        referenciaArchivo.current.click();
+      };
+
+      // Manejar inicio de sesión
+      const manejarInicioSesion = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        if (!usuario || !contrasena || !idParticion) {
+          setError('Por favor, completa todos los campos');
+          return;
+        }
+
+        const comandoLogin = `login -user="${usuario}" -pass="${contrasena}" -id="${idParticion}"`;
+        const salida = await ejecutarComando(comandoLogin);
+
+        if (salida.includes('Sesión iniciada para')) {
+          setEstaConectado(true);
+          setUsuarioActual(usuario);
+          setIdParticionActual(idParticion);
+          setSalida(salida);
+          setMostrarModal(false);
+          setUsuario('');
+          setContrasena('');
+          setIdParticion('');
+        } else {
+          setError(salida || 'Error al iniciar sesión');
+        }
+      };
+
+      // Manejar cierre de sesión
+      const manejarCierreSesion = async () => {
+        const salida = await ejecutarComando('logout');
+        setSalida(salida);
+        setEstaConectado(false);
+        setUsuarioActual('');
+        setIdParticionActual('');
+        setComandos('');
+        setVista('terminal');
+        setDiscoSeleccionado(null);
+        setRutaActual('/');
+      };
+
+      // Obtener lista de discos
+      const obtenerDiscos = async () => {
+        try {
+          console.log(`Obteniendo discos desde ${BACKEND_URL}/partitions`);
+          const respuesta = await fetch(`${BACKEND_URL}/partitions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: '' }),
+          });
+          if (!respuesta.ok) {
+            throw new Error(`Error HTTP: ${respuesta.status} ${respuesta.statusText}`);
+          }
+          const resultado = await respuesta.json();
+          console.log('Respuesta de /partitions:', JSON.stringify(resultado, null, 2));
+
+          if (!resultado.disks || !Array.isArray(resultado.disks)) {
+            console.warn('No se encontraron discos o el formato es incorrecto');
+            setSalida('Error: No se encontraron discos montados en el backend.');
+            return [];
+          }
+
+          const discos = resultado.disks.map((disk, index) => ({
+            path: disk.path,
+            name: `Disco${index + 1}`,
+            mounted: disk.partitions.map(part => ({
+              id: part.ID,
+              name: part.Name
+            })),
+            size: disk.size || 0,
+            creation_date: disk.creation_date || 'Desconocido'
+          })).filter(disco => disco.mounted.length > 0);
+
+          console.log('Discos procesados:', discos);
+          if (discos.length === 0) {
+            setSalida('Error: No se encontraron discos con particiones montadas. Ejecuta el comando "mount" o verifica el backend.');
+          }
+          return discos;
+        } catch (error) {
+          console.error('Error al obtener discos:', error);
+          setSalida(`Error al obtener discos: ${error.message}. Verifica la conexión con el backend en ${BACKEND_URL}.`);
+          return [];
+        }
+      };
+
+      // Obtener particiones de un disco
+      const obtenerParticiones = async (discoPath) => {
+        try {
+          console.log(`Obteniendo particiones para ${discoPath} desde ${BACKEND_URL}/partitions`);
+          const respuesta = await fetch(`${BACKEND_URL}/partitions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: discoPath }),
+          });
+          if (!respuesta.ok) {
+            throw new Error(`Error HTTP: ${respuesta.status} ${respuesta.statusText}`);
+          }
+          const resultado = await respuesta.json();
+          console.log('Respuesta de particiones:', JSON.stringify(resultado, null, 2));
+
+          if (!resultado.disks || !Array.isArray(resultado.disks) || resultado.disks.length === 0) {
+            console.warn('No se encontraron particiones para el disco');
+            setSalida(`Error: No se encontraron particiones para el disco ${discoPath}.`);
+            return [];
+          }
+
+          const disco = resultado.disks.find(d => d.path === discoPath);
+          if (!disco || !disco.partitions) {
+            setSalida(`Error: No se encontraron particiones para el disco ${discoPath}.`);
+            return [];
+          }
+
+          return disco.partitions.map((particion) => ({
+            name: particion.Name,
+            id: particion.ID,
+            status: 'Montada'
+          }));
+        } catch (error) {
+          console.error('Error al obtener particiones:', error);
+          setSalida(`Error al obtener particiones: ${error.message}`);
+          return [];
+        }
+      };
+
+      // Listar contenido de una ruta
+      const listarDirectorio = async (ruta, idParticion) => {
+        if (idParticion !== idParticionActual) {
+          setSalida('Error: La partición seleccionada no coincide con la sesión activa.');
+          return [];
+        }
+        const comando = `ls -path="${normalizarRuta(ruta)}" -id="${idParticion}"`;
+        const salida = await ejecutarComando(comando);
+        try {
+          const result = JSON.parse(salida);
+          if (!Array.isArray(result)) {
+            setSalida(`Error: Respuesta de ls no es una lista válida: ${salida}`);
+            return [];
+          }
+          // Filtrar entradas . y .. para evitar navegación redundante
+          return result
+            .filter(item => item.name !== '.' && item.name !== '..')
+            .map(item => ({
+              name: item.name || 'Desconocido',
+              type: item.type === '0' ? 'folder' : 'file',
+              size: item.size !== undefined ? item.size : 0,
+              creation_date: item.creation_date || 'Desconocido',
+              permissions: item.permissions || '---'
+            }));
+        } catch (error) {
+          console.error('Error al parsear salida de ls:', error, salida);
+          setSalida(`Error: No se pudo listar el directorio ${ruta}: ${salida}`);
+          return [];
+        }
+      };
+
+      // Leer contenido de un archivo
+      const leerArchivo = async (ruta, idParticion) => {
+        if (idParticion !== idParticionActual) {
+          return 'Error: La partición seleccionada no coincide con la sesión activa.';
+        }
+        const comando = `cat -file="${normalizarRuta(ruta)}" -id="${idParticion}"`;
+        return await ejecutarComando(comando);
+      };
+
+      // Formatear tamaño en MB
+      const formatSize = (bytes) => {
+        if (bytes === 0) return '0 MB';
+        const mb = bytes / (1024 * 1024);
+        return `${mb.toFixed(2)} MB`;
+      };
+
+      // Componente para seleccionar disco
+      const DiskSelector = () => {
+        const [discos, setDiscos] = useState([]);
+        const [cargando, setCargando] = useState(false);
+
+        const actualizarDiscos = async () => {
+          setCargando(true);
+          const nuevosDiscos = await obtenerDiscos();
+          setDiscos(nuevosDiscos);
+          setCargando(false);
+        };
+
+        useEffect(() => {
+          actualizarDiscos();
+        }, []);
+
+        return (
+          <div className="p-6 max-w-5xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6 flex items-center">
+              <i className="fas fa-hdd mr-2 text-blue-600"></i> Seleccionar Disco
+            </h2>
+            {cargando ? (
+              <div className="flex items-center justify-center">
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                <p className="text-gray-600">Cargando discos...</p>
+              </div>
+            ) : discos.length === 0 ? (
+              <p className="text-red-600">No se encontraron discos con particiones montadas. Usa el comando "mount" en la terminal.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {discos.map((disco) => (
+                  <div
+                    key={disco.path}
+                    className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 cursor-pointer"
+                    onClick={() => {
+                      setDiscoSeleccionado(disco);
+                      setVista('partitionSelector');
+                    }}
+                  >
+                    <div className="flex items-center mb-4">
+                      <i className="fas fa-hdd text-2xl text-blue-600 mr-3"></i>
+                      <h3 className="font-bold text-lg">{disco.name}</h3>
+                    </div>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p>
+                        <span className="font-semibold">Ruta:</span> {disco.path}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Tamaño:</span> {formatSize(disco.size)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Creado:</span> {disco.creation_date}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Particiones Montadas:</span> {disco.mounted.map(p => `${p.name} (${p.id})`).join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex space-x-4 mt-8">
+              <button
+                onClick={actualizarDiscos}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center transition-colors duration-200"
+                disabled={cargando}
+              >
+                <i className="fas fa-sync-alt mr-2"></i> Actualizar Discos
+              </button>
+              <button
+                onClick={() => setVista('terminal')}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-arrow-left mr-2"></i> Volver a Terminal
+              </button>
+              <button
+                onClick={manejarCierreSesion}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      // Componente para seleccionar partición
+      const PartitionSelector = () => {
+        const [particiones, setParticiones] = useState([]);
+        const [cargando, setCargando] = useState(false);
+
+        useEffect(() => {
+          if (discoSeleccionado) {
+            setCargando(true);
+            obtenerParticiones(discoSeleccionado.path).then((parts) => {
+              setParticiones(parts);
+              setCargando(false);
+            });
+          }
+        }, [discoSeleccionado]);
+
+        return (
+          <div className="p-6 max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6 flex items-center">
+              <i className="fas fa-database mr-2 text-blue-600"></i> Seleccionar Partición - {discoSeleccionado?.name}
+            </h2>
+            {cargando ? (
+              <div className="flex items-center justify-center">
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                <p className="text-gray-600">Cargando particiones...</p>
+              </div>
+            ) : particiones.length === 0 ? (
+              <p className="text-red-600">No se encontraron particiones montadas en este disco.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {particiones.map((particion) => (
+                  <div
+                    key={particion.id}
+                    className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 cursor-pointer"
+                    onClick={() => {
+                      if (particion.id === idParticionActual) {
+                        setRutaActual('/');
+                        setVista('fileSystem');
+                      } else {
+                        setSalida('Error: La partición seleccionada no coincide con la sesión activa.');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center mb-4">
+                      <i className="fas fa-database text-2xl text-blue-600 mr-3"></i>
+                      <h3 className="font-bold text-lg">{particion.name} ({particion.id})</h3>
+                    </div>
+                    <p className="text-sm text-green-600">Estado: {particion.status}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex space-x-4 mt-8">
+              <button
+                onClick={() => setVista('diskSelector')}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-arrow-left mr-2"></i> Volver a Discos
+              </button>
+              <button
+                onClick={() => setSalida('Error: El soporte para journaling (EXT3) no está implementado en el backend.')}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-book mr-2"></i> Ver Journal
+              </button>
+              <button
+                onClick={manejarCierreSesion}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      // Componente para navegar el sistema de archivos
+      const FileSystemViewer = () => {
+        const [contenido, setContenido] = useState([]);
+        const [contenidoArchivo, setContenidoArchivo] = useState(null);
+        const [cargando, setCargando] = useState(false);
+
+        useEffect(() => {
+          setCargando(true);
+          listarDirectorio(rutaActual, idParticionActual).then((items) => {
+            setContenido(items);
+            setContenidoArchivo(null);
+            setCargando(false);
+          });
+        }, [rutaActual, idParticionActual]);
+
+        const manejarNavegacion = (nombre, tipo) => {
+          if (tipo === 'folder') {
+            const nuevaRuta = rutaActual === '/' ? `/${nombre}` : `${rutaActual}/${nombre}`;
+            setRutaActual(normalizarRuta(nuevaRuta));
+          } else if (tipo === 'file') {
+            setCargando(true);
+            const rutaArchivo = rutaActual === '/' ? `/${nombre}` : `${rutaActual}/${nombre}`;
+            leerArchivo(normalizarRuta(rutaArchivo), idParticionActual).then((contenido) => {
+              setContenidoArchivo(contenido);
+              setCargando(false);
+            });
+          }
+        };
+
+        const subirDirectorio = () => {
+          if (rutaActual !== '/') {
+            const partes = rutaActual.split('/').filter(Boolean);
+            partes.pop();
+            const nuevaRuta = partes.length ? `/${partes.join('/')}` : '/';
+            setRutaActual(normalizarRuta(nuevaRuta));
+          }
+        };
+
+        return (
+          <div className="p-6 max-w-5xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6 flex items-center">
+              <i className="fas fa-folder-open mr-2 text-blue-600"></i> Sistema de Archivos - {idParticionActual}
+            </h2>
+            <p className="mb-4 text-gray-700 flex items-center">
+              <i className="fas fa-map-signs mr-2"></i> Ruta: {rutaActual}
+            </p>
+            <div className="flex space-x-4 mb-6">
+              {rutaActual !== '/' && (
+                <button
+                  onClick={subirDirectorio}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center transition-colors duration-200"
+                >
+                  <i className="fas fa-arrow-up mr-2"></i> Subir Directorio
+                </button>
+              )}
+            </div>
+            {cargando ? (
+              <div className="flex items-center justify-center">
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                <p className="text-gray-600">Cargando contenido...</p>
+              </div>
+            ) : contenido.length === 0 ? (
+              <p className="text-gray-600">No hay archivos o directorios en esta ruta.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {contenido.map((item) => (
+                  <div
+                    key={item.name}
+                    className={`p-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 cursor-pointer ${
+                      item.type === 'folder' ? 'bg-yellow-50' : 'bg-blue-50'
+                    }`}
+                    onClick={() => manejarNavegacion(item.name, item.type)}
+                  >
+                    <div className="flex items-center mb-4">
+                      <i
+                        className={`text-2xl mr-3 ${
+                          item.type === 'folder' ? 'fas fa-folder text-yellow-600' : 'fas fa-file text-blue-600'
+                        }`}
+                      ></i>
+                      <span className="font-bold text-lg truncate">{item.name}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p>
+                        <span className="font-semibold">Tipo:</span> {item.type === 'folder' ? 'Directorio' : 'Archivo'}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Tamaño:</span> {formatSize(item.size)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Creado:</span> {item.creation_date}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Permisos:</span>{' '}
+                        <span className="font-mono text-green-600">{item.permissions}</span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {contenidoArchivo && (
+              <div className="mt-6 p-6 bg-gray-800 text-white rounded-xl shadow-lg">
+                <h3 className="font-bold text-lg mb-4 flex items-center">
+                  <i className="fas fa-file-alt mr-2"></i> Contenido del Archivo
+                </h3>
+                <pre className="bg-gray-900 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap">
+                  {contenidoArchivo}
+                </pre>
+                <button
+                  onClick={() => setContenidoArchivo(null)}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 mt-4 flex items-center transition-colors duration-200"
+                >
+                  <i className="fas fa-times mr-2"></i> Cerrar
+                </button>
+              </div>
+            )}
+            <div className="flex space-x-4 mt-8">
+              <button
+                onClick={() => setVista('terminal')}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-home mr-2"></i> Inicio
+              </button>
+              <button
+                onClick={() => setVista('partitionSelector')}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-arrow-left mr-2"></i> Volver a Particiones
+              </button>
+              <button
+                onClick={() => setSalida('Error: El soporte para journaling (EXT3) no está implementado en el backend.')}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-book mr-2"></i> Ver Journal
+              </button>
+              <button
+                onClick={manejarCierreSesion}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      // Componente para visualizar el journal (deshabilitado)
+      const JournalViewer = () => {
+        return (
+          <div className="p-6 max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6 flex items-center">
+              <i className="fas fa-book mr-2 text-purple-600"></i> Journal - {idParticionActual}
+            </h2>
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <p className="text-red-600">El soporte para journaling (EXT3) no está implementado en el backend.</p>
+            </div>
+            <div className="flex space-x-4 mt-8">
+              <button
+                onClick={() => setVista('fileSystem')}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-arrow-left mr-2"></i> Volver al Sistema de Archivos
+              </button>
+              <button
+                onClick={manejarCierreSesion}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      // Terminal (vista principal)
+      const Terminal = () => (
+        <div className="container mx-auto p-6 max-w-4xl">
+          <div className="flex items-center justify-center mb-6">
+            <i className="fas fa-hdd text-4xl text-blue-600 mr-3"></i>
+            <h1 className="text-3xl font-bold text-gray-800">
+              Administrador de Sistema de Archivos EXT2/EXT3
+            </h1>
+          </div>
+          <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-lg">
+            {estaConectado ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-lg text-gray-700 flex items-center">
+                  <i className="fas fa-user mr-2 text-blue-600"></i>
+                  Usuario: {usuarioActual} | Partición: {idParticionActual}
+                </span>
+                <button
+                  onClick={() => setVista('diskSelector')}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center transition-colors duration-200"
+                >
+                  <i className="fas fa-folder-open mr-2"></i> Ver Sistema de Archivos
+                </button>
+                <button
+                  onClick={manejarCierreSesion}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center transition-colors duration-200"
+                >
+                  <i className="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setMostrarModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center transition-colors duration-200"
+              >
+                <i className="fas fa-sign-in-alt mr-2"></i> Iniciar Sesión
+              </button>
+            )}
+          </div>
+          <div className="mb-6 bg-white p-6 rounded-xl shadow-lg">
+            <label className="block text-lg font-medium text-gray-700 mb-2 flex items-center">
+              <i className="fas fa-terminal mr-2 text-blue-600"></i> Entrada de Comandos
+            </label>
+            <textarea
+              className="w-full h-40 p-3 border rounded-lg resize-y focus:ring-2 focus:ring-blue-600"
+              placeholder="Ingresa tus comandos aquí..."
+              value={comandos}
+              onChange={(e) => setComandos(e.target.value)}
+            ></textarea>
+          </div>
+          <div className="flex space-x-4 mb-6">
+            <input
+              type="file"
+              accept=".smia"
+              ref={referenciaArchivo}
+              className="hidden"
+              onChange={manejarCargaArchivo}
+            />
+            <button
+              onClick={activarEntradaArchivo}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center transition-colors duration-200"
+            >
+              <i className="fas fa-upload mr-2"></i> Cargar Script
+            </button>
+            <button
+              onClick={manejarEjecucion}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center transition-colors duration-200"
+            >
+              <i className="fas fa-play mr-2"></i> Ejecutar Comandos
+            </button>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <label className="block text-lg font-medium text-gray-700 mb-2 flex items-center">
+              <i className="fas fa-file-alt mr-2 text-blue-600"></i> Salida de Comandos
+            </label>
+            <div className="bg-gray-100 p-4 rounded-lg min-h-[100px] whitespace-pre-wrap text-gray-700">
+              {salida || 'La salida aparecerá aquí...'}
+            </div>
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="flex flex-col min-h-screen">
+          <header className="bg-blue-800 text-white p-4 shadow-md">
+            <div className="container mx-auto flex items-center">
+              <i className="fas fa-hdd text-3xl mr-3"></i>
+              <h1 className="text-2xl font-bold">MIA Proyecto 2 - Sistema de Archivos EXT2/EXT3</h1>
+            </div>
+          </header>
+          <main className="flex-grow">
+            {vista === 'terminal' && <Terminal />}
+            {vista === 'diskSelector' && estaConectado && <DiskSelector />}
+            {vista === 'partitionSelector' && estaConectado && <PartitionSelector />}
+            {vista === 'fileSystem' && estaConectado && <FileSystemViewer />}
+            {vista === 'journalViewer' && estaConectado && <JournalViewer />}
+            {mostrarModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+                  <h2 className="text-2xl font-bold mb-6 flex items-center">
+                    <i className="fas fa-sign-in-alt mr-2 text-blue-600"></i> Iniciar Sesión
+                  </h2>
+                  <form onSubmit={manejarInicioSesion}>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-1 flex items-center">
+                        <i className="fas fa-user mr-2"></i> Usuario
+                      </label>
+                      <input
+                        type="text"
+                        value={usuario}
+                        onChange={(e) => setUsuario(e.target.value)}
+                        placeholder="Ingresa tu usuario"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-1 flex items-center">
+                        <i className="fas fa-lock mr-2"></i> Contraseña
+                      </label>
+                      <input
+                        type="password"
+                        value={contrasena}
+                        onChange={(e) => setContrasena(e.target.value)}
+                        placeholder="Ingresa tu contraseña"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-1 flex items-center">
+                        <i className="fas fa-database mr-2"></i> ID de Partición
+                      </label>
+                      <input
+                        type="text"
+                        value={idParticion}
+                        onChange={(e) => setIdParticion(e.target.value)}
+                        placeholder="Ingresa el ID de la partición"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
+                      />
+                    </div>
+                    {error && <p className="text-red-500 mb-4">{error}</p>}
+                    <div className="flex justify-end space-x-4">
+                      <button
+                        type="button"
+                        onClick={() => setMostrarModal(false)}
+                        className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center transition-colors duration-200"
+                      >
+                        <i className="fas fa-times mr-2"></i> Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center transition-colors duration-200"
+                      >
+                        <i className="fas fa-sign-in-alt mr-2"></i> Iniciar Sesión
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </main>
+          <footer className="bg-gray-800 text-white p-4 text-center">
+            <p>Proyecto 2 - Manejo e Implementación de Archivos 2025</p>
+            <p>Estudiante: Luis Pablo García - Carnet: 202200129</p>
+          </footer>
+        </div>
+      );
+    }
+
+    // Renderizar la aplicación
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>

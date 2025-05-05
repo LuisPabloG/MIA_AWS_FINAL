@@ -1,0 +1,266 @@
+/* src/App.css */
+.contenedor {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9fafb;
+}
+
+.titulo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.subtitulo {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.seccion-usuario {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.info-usuario {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.boton-iniciar-sesion,
+.boton-cerrar-sesion,
+.boton-cargar,
+.boton-ejecutar,
+.boton-cancelar,
+.boton-volver,
+.boton-visualizador {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.boton-iniciar-sesion,
+.boton-ejecutar,
+.boton-visualizador {
+  background-color: #007bff;
+  color: white;
+}
+
+.boton-iniciar-sesion:hover,
+.boton-ejecutar:hover,
+.boton-visualizador:hover {
+  background-color: #0056b3;
+}
+
+.boton-cerrar-sesion {
+  background-color: #dc3545;
+  color: white;
+}
+
+.boton-cerrar-sesion:hover {
+  background-color: #c82333;
+}
+
+.boton-cargar {
+  background-color: #28a745;
+  color: white;
+}
+
+.boton-cargar:hover {
+  background-color: #218838;
+}
+
+.boton-cancelar,
+.boton-volver {
+  background-color: #6c757d;
+  color: white;
+}
+
+.boton-cancelar:hover,
+.boton-volver:hover {
+  background-color: #5a6268;
+}
+
+.seccion-entrada {
+  margin-bottom: 1rem;
+}
+
+.etiqueta {
+  display: block;
+  font-size: 1rem;
+  font-weight: medium;
+  margin-bottom: 0.5rem;
+}
+
+.textarea-comandos {
+  width: 100%;
+  height: 150px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+  font-size: 14px;
+}
+
+.seccion-botones {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.input-archivo {
+  display: none;
+}
+
+.seccion-salida {
+  margin-top: 1rem;
+}
+
+.area-salida {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-height: 100px;
+  white-space: pre-wrap;
+  font-size: 14px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-contenido {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.modal-titulo {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.campo-formulario {
+  margin-bottom: 1rem;
+}
+
+.input-login {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.mensaje-error {
+  color: #dc3545;
+  font-size: 14px;
+  margin-bottom: 1rem;
+}
+
+.modal-botones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.seccion-visualizador {
+  margin-bottom: 1rem;
+}
+
+.lista-discos,
+.lista-particiones,
+.lista-archivos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.tarjeta-disco,
+.tarjeta-particion,
+.tarjeta-archivo {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tarjeta-disco:hover,
+.tarjeta-particion:hover,
+.tarjeta-archivo:hover {
+  background-color: #f1f5f9;
+}
+
+.tarjeta-disco h3,
+.tarjeta-particion h3 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.tarjeta-disco p,
+.tarjeta-particion p {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.tarjeta-archivo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tarjeta-archivo.folder {
+  background-color: #fef9c3;
+}
+
+.tarjeta-archivo.file {
+  background-color: #e0f2fe;
+}
+
+.tarjeta-archivo span {
+  font-size: 0.875rem;
+}
+
+.ruta-actual {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.contenido-archivo {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.contenido-archivo h3 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.contenido-archivo pre {
+  white-space: pre-wrap;
+  font-size: 0.875rem;
+}

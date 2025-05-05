@@ -1,0 +1,130 @@
+# Creación de discos
+mkdisk -size=20 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -fit=FF
+mkdisk -size=15 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -fit=BF
+mkdisk -size=10 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco3.mia" -fit=WF
+
+# Eliminación de un disco
+rmdisk -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco3.mia"
+
+# Creación de particiones en Disco1
+fdisk -size=5000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -type=P -fit=BF
+fdisk -size=6000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion2 -type=E -fit=FF
+
+# Creación de una partición lógica dentro de la extendida en Disco1
+fdisk -size=2000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -type=L -fit=WF
+
+# Creación de particiones en Disco2
+fdisk -size=4000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA -type=P -fit=FF
+fdisk -size=4000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -type=P -fit=BF
+
+# Montaje de particiones
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB
+
+# Mostrar particiones montadas
+mounted
+
+# Formatear las particiones con MKFS (EXT3)
+mkfs -id=291A -fs=ext3
+mkfs -id=292A -fs=ext3
+mkfs -id=291B -fs=ext3
+mkfs -id=292B -fs=ext3
+
+# Modificar tamaño de particiones con FDISK (ADD)
+# Aumentar tamaño de Particion1 en 1000 KB
+fdisk -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -add=1000
+# Aumentar tamaño de ParticionLogica1 en 500 KB
+fdisk -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -add=500
+
+# --- Comandos para la partición 291A ---
+login -user=root -pass=123 -id=291A
+cat -file="/users.txt" -id=291A
+mkgrp -name=admins
+mkusr -user=john -pass=456 -grp=admins
+chgrp -user=john -grp=root
+cat -file="/users.txt" -id=291A
+rmusr -user=john
+rmgrp -name=admins
+cat -file="/users.txt" -id=291A
+mkdir -path="/docs"
+mkdir -path="/docs/projects/subproject" -p
+mkfile -path="/docs/note.txt" -cont="Este es un archivo de prueba."
+mkfile -path="/docs/data.bin" -size=256
+cat -file="/docs/note.txt" -id=291A
+# Nuevos comandos
+copy -src="/docs/note.txt" -dest="/docs/note_copy.txt" -id=291A # Copiar archivo
+move -src="/docs/note_copy.txt" -dest="/docs/projects/note_copy.txt" -id=291A # Mover archivo
+find -path="/docs" -name="*.txt" -id=291A # Buscar archivos .txt
+chown -user=john -path="/docs/note.txt" -id=291A # Cambiar propietario (aunque john fue eliminado, se asume recreación si necesario)
+chmod -path="/docs/note.txt" -perm=644 -id=291A # Cambiar permisos a rw-r--r--
+edit -path="/docs/note.txt" -cont="Archivo editado." -id=291A # Editar contenido del archivo
+rename -path="/docs/note.txt" -newname="note_updated.txt" -id=291A # Renombrar archivo
+logout
+unmount -id=291A
+
+# --- Comandos para la partición 291B ---
+login -user=root -pass=123 -id=291B
+mkdir -path="/files"
+mkdir -path="/files/backups/archive" -p
+mkfile -path="/files/test.txt" -cont="Archivo en ParticionA."
+mkfile -path="/files/empty.bin" -size=128
+cat -file="/files/test.txt" -id=291B
+# Nuevos comandos
+copy -src="/files/test.txt" -dest="/files/backups/test_backup.txt" -id=291B # Copiar archivo
+move -src="/files/test.txt" -dest="/files/backups/archive/test.txt" -id=291B # Mover archivo
+find -path="/files" -name="*.txt" -id=291B # Buscar archivos .txt
+chown -user=root -path="/files/backups/test_backup.txt" -id=291B # Cambiar propietario a root
+chmod -path="/files/backups/test_backup.txt" -perm=600 -id=291B # Cambiar permisos a rw-------
+edit -path="/files/backups/test_backup.txt" -cont="Backup editado." -id=291B # Editar contenido
+rename -path="/files/backups/test_backup.txt" -newname="test_backup_updated.txt" -id=291B # Renombrar archivo
+logout
+unmount -id=291B
+
+# --- Comandos para la partición 292A ---
+login -user=root -pass=123 -id=292A
+cat -file="/users.txt" -id=292A
+# Nuevos comandos
+mkdir -path="/logs"
+mkfile -path="/logs/error.log" -cont="Error inicial."
+copy -src="/logs/error.log" -dest="/logs/error_copy.log" -id=292A # Copiar archivo
+move -src="/logs/error_copy.log" -dest="/logs/archive/error_copy.log" -id=292A # Mover archivo (asume creación de /logs/archive)
+find -path="/logs" -name="*.log" -id=292A # Buscar archivos .log
+chown -user=root -path="/logs/error.log" -id=292A # Cambiar propietario
+chmod -path="/logs/error.log" -perm=664 -id=292A # Cambiar permisos a rw-rw-r--
+edit -path="/logs/error.log" -cont="Error actualizado." -id=292A # Editar contenido
+rename -path="/logs/error.log" -newname="error_updated.log" -id=292A # Renombrar archivo
+logout
+unmount -id=292A
+
+# --- Comandos para la partición 292B ---
+login -user=root -pass=123 -id=292B
+cat -file="/users.txt" -id=292B
+mkdir -path="/data"
+mkdir -path="/data/logs/errors" -p
+mkfile -path="/data/log.txt" -cont="Log de prueba en ParticionB."
+mkfile -path="/data/sample.bin" -size=512
+cat -file="/data/log.txt" -id=292B
+# Nuevos comandos
+copy -src="/data/log.txt" -dest="/data/logs/log_copy.txt" -id=292B # Copiar archivo
+move -src="/data/log_copy.txt" -dest="/data/logs/errors/log_copy.txt" -id=292B # Mover archivo
+find -path="/data" -name="*.txt" -id=292B # Buscar archivos .txt
+chown -user=root -path="/data/log.txt" -id=292B # Cambiar propietario
+chmod -path="/data/log.txt" -perm=755 -id=292B # Cambiar permisos a rwxr-xr-x
+edit -path="/data/log.txt" -cont="Log editado en ParticionB." -id=292B # Editar contenido
+rename -path="/data/log.txt" -newname="log_updated.txt" -id=292B # Renombrar archivo
+logout
+unmount -id=292B
+
+# Simular pérdida de datos en una partición
+#loss -id=291B # Simular pérdida de datos en ParticionA
+
+# Recuperar datos de una partición
+#recovery -id=291B # Intentar recuperación de ParticionA
+
+# Eliminar una partición con FDISK (DELETE)
+#fdisk -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -delete=full
+
+# Mostrar particiones montadas (para verificar que ParticionB fue eliminada)
+mounted

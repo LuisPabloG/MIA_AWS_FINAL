@@ -1,0 +1,75 @@
+# Limpiar sesión activa
+LOGOUT
+
+# Crear disco 1 en la ruta especificada
+MKDISK -size=10 -unit=M -fit=FF -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk1.mia"
+
+# Crear particiones en disco 1
+FDISK -size=2000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk1.mia" -name=Particion1 -type=P -fit=BF
+FDISK -size=3000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk1.mia" -name=Particion2 -type=E -fit=WF
+FDISK -size=1000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk1.mia" -name=Logica1 -type=L -fit=FF
+
+# Montar particiones
+MOUNT -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk1.mia" -name=Particion1
+MOUNT -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk1.mia" -name=Logica1
+
+# Formatear particiones
+MKFS -id=291A -type=full
+MKFS -id=292A -type=full
+
+# Iniciar sesión como root
+LOGIN -user=root -pass=123 -id=291A
+
+# Crear grupos
+MKGRP -name=admins
+MKGRP -name=users
+
+# Crear usuarios
+MKUSR -user=pablo -pass=456 -grp=users
+MKUSR -user=admin -pass=789 -grp=admins
+
+# Crear estructura de directorios
+MKDIR -path=/home
+MKDIR -path=/descargas
+MKDIR -path=/home/pablo -p
+MKDIR -path=/descargas/carnet -p
+
+# Crear archivos
+MKFILE -path=/home/pablo/notas.txt -cont="Notas personales de Pablo"
+MKFILE -path=/descargas/carnet/carnet.txt -size=1024
+MKFILE -path=/test.txt -cont="Archivo de prueba en raíz"
+
+# Listar contenido para verificar
+ls -path=/ -id=291A
+ls -path=/home -id=291A
+ls -path=/descargas -id=291A
+
+# Leer archivo
+CAT -file=/users.txt -id=291A
+CAT -file=/home/pablo/notas.txt -id=291A
+
+# Cerrar sesión
+LOGOUT
+
+# Probar login con otro usuario
+LOGIN -user=pablo -pass=456 -id=291A
+
+# Listar contenido como usuario pablo
+ls -path=/home/pablo -id=291A
+
+# Crear otro disco en la ruta especificada
+MKDISK -size=5 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk2.mia"
+FDISK -size=2000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk2.mia" -name=Particion3 -type=P -fit=FF
+MOUNT -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/disk2.mia" -name=Particion3
+MKFS -id=291B -type=full
+
+# Crear contenido en la nueva partición
+LOGIN -user=root -pass=123 -id=291B
+MKDIR -path=/proyectos -p
+MKFILE -path=/proyectos/mia.txt -cont="Proyecto MIA 2025"
+
+# Listar contenido
+ls -path=/proyectos -id=291B
+
+# Cerrar sesión
+LOGOUT

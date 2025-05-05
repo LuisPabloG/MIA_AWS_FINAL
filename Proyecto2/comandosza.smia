@@ -1,0 +1,131 @@
+# Creación de discos
+mkdisk -size=10 -unit=M -path="/home/luis-pablo-garcia/Documentos/Disco1.mia"
+mkdisk -size=15 -unit=M -path="/home/luis-pablo-garcia/Documentos/Disco2.mia"
+
+# Eliminación de disco
+rmdisk -path="/home/luis-pablo-garcia/Documentos/Disco1.mia"
+
+# Creación de particiones
+fdisk -size=300 -unit=K -path="/home/luis-pablo-garcia/Documentos/Disco2.mia" -name=Particion1 -type=P
+fdisk -size=500 -unit=K -path="/home/luis-pablo-garcia/Documentos/Disco2.mia" -name=Particion2 -type=E
+
+# Montaje de particiones
+mount -path="/home/luis-pablo-garcia/Documentos/Disco2.mia" -name=Particion1
+mount -path="/home/luis-pablo-garcia/Documentos/Disco2.mia" -name=Particion2
+
+# Formateo de la partición 291A con EXT2
+mkfs -id=291A -type=full
+
+# Inicio de sesión del usuario root en la partición 291A
+login -user=root -pass=123 -id=291A
+
+# Creación de un nuevo grupo llamado 'usuarios'
+mkgrp -name=usuarios
+
+# Creación de un nuevo usuario 'user1' en el grupo 'usuarios'
+mkusr -user=user1 -pass=usuario -grp=usuarios
+
+# Eliminación del usuario 'user1'
+rmusr -user=user1
+
+# Intento de cambiar el grupo del usuario 'user1' a 'root'
+chgrp -user=user1 -grp=root
+
+# Eliminación del grupo 'usuarios'
+rmgrp -name=usuarios
+
+# Cierre de la sesión activa
+logout
+
+# Inicio de sesión nuevamente como root
+login -user=root -pass=123 -id=291A
+
+# Creación de una carpeta y un archivo dentro de la partición
+mkdir -path="/home/luis-pablo-garcia/Documentos" -p -id=291A
+mkfile -path="/home/luis-pablo-garcia/Documentos/archivo.txt" -size=12 -cont="Hola, mundo!" -id=291A
+cat -path=/home/luis-pablo-garcia/Documentos/archivo.txt -id=291A
+
+# Generación de reportes
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report1.jpg" -name=mbr
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report2.jpg" -name=disk
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report3.jpg" -name=inode
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report4.jpg" -name=block
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report5.txt" -name=bm_inode
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report6.txt" -name=bm_bloc
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report7.jpg" -name=tree
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report8.jpg" -name=sb
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report9.txt" -name=file -path_file_ls="/home/luis-pablo-garcia/Documentos/archivo.txt"
+rep -id=291A -path="/home/luis-pablo-garcia/Documentos/Reportes/report10.jpg" -name=ls -path_file_ls="/home/luis-pablo-garcia/Documentos"
+
+# Cierre de la sesión activa
+logout
+
+
+# Creación de discos
+mkdisk -size=20 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -fit=FF
+mkdisk -size=15 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -fit=BF
+mkdisk -size=10 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco3.mia" -fit=WF
+
+# Eliminación de un disco
+rmdisk -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco3.mia"
+
+# Creación de particiones en Disco1
+fdisk -size=5000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -type=P -fit=BF
+fdisk -size=6000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion2 -type=E -fit=FF
+
+# Creación de una partición lógica dentro de la extendida en Disco1
+fdisk -size=2000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -type=L -fit=WF
+
+# Creación de particiones en Disco2
+fdisk -size=4000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA -type=P -fit=FF
+fdisk -size=4000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -type=P -fit=BF
+
+# Montaje de particiones
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB
+
+# Mostrar particiones montadas
+mounted
+
+# Formatear las particiones con MKFS (EXT2)
+mkfs -id=291A -type=full
+mkfs -id=292A -type=full
+mkfs -id=291B -type=full
+mkfs -id=292B -type=full
+
+# Iniciar sesión como root
+login -user=root -pass=123 -id=291A
+
+# Leer el contenido de users.txt en cada partición
+cat -file="/users.txt"
+
+# Cambiar la sesión a otra partición y leer users.txt
+logout
+login -user=root -pass=123 -id=292A
+cat -file="/users.txt"
+
+logout
+login -user=root -pass=123 -id=291B
+cat -file="/users.txt"
+
+logout
+login -user=root -pass=123 -id=292B
+cat -file="/users.txt"
+
+# Crear un grupo y un usuario en la partición 291A
+logout
+login -user=root -pass=123 -id=291A
+mkgrp -name=admins
+mkusr -user=john -pass=456 -grp=admins
+chgrp -user=john -grp=root
+cat -file="/users.txt"
+
+# Eliminar el usuario y el grupo
+rmusr -user=john
+rmgrp -name=admins
+cat -file="/users.txt"
+
+# Cerrar sesión
+logout

@@ -1,0 +1,107 @@
+# Creación de discos
+mkdisk -size=20 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -fit=FF
+mkdisk -size=15 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -fit=BF
+mkdisk -size=10 -unit=M -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco3.mia" -fit=WF
+
+# Eliminación de un disco
+rmdisk -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco3.mia"
+
+# Creación de particiones en Disco1
+fdisk -size=5000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -type=P -fit=BF
+fdisk -size=6000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion2 -type=E -fit=FF
+fdisk -size=2000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -type=L -fit=WF
+
+# Creación de particiones en Disco2
+fdisk -size=4000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA -type=P -fit=FF
+fdisk -size=4000 -unit=K -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -type=P -fit=BF
+
+# Nuevos comandos FDISK: Ajustar tamaño y eliminar partición
+fdisk -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -add=1000
+fdisk -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -delete=fast
+
+# Montaje de particiones
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1
+mount -path="/home/luis-pablo-garcia/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA
+
+# Mostrar particiones montadas
+mounted
+
+# Formatear las particiones (EXT2 y EXT3)
+mkfs -id=291A -type=full -fs=3fs     # EXT3 para Particion1
+mkfs -id=292A -type=full -fs=2fs     # EXT2 para ParticionLogica1
+mkfs -id=291B -type=full -fs=3fs     # EXT3 para ParticionA
+
+# --- Comandos para la partición 291A (Particion1, EXT3) ---
+login -user=root -pass=123 -id=291A
+cat -file="/users.txt"
+mkgrp -name=admins
+mkusr -user=john -pass=456 -grp=admins
+chgrp -user=john -grp=root
+cat -file="/users.txt"
+rmusr -user=john
+rmgrp -name=admins
+cat -file="/users.txt"
+mkdir -path="/docs"
+mkdir -path="/docs/projects/subproject" -p
+mkfile -path="/docs/note.txt" -cont="Este es un archivo de prueba."
+mkfile -path="/docs/data.bin" -size=256
+cat -file="/docs/note.txt"
+# Nuevos comandos
+edit -path="/docs/note.txt" -cont="Archivo editado con nuevo contenido."
+rename -path="/docs/note.txt" -name=note_updated.txt
+copy -path="/docs/note_updated.txt" -dest="/docs/projects/note_copy.txt"
+move -path="/docs/projects/note_copy.txt" -dest="/docs/note_moved.txt"
+find -path="/docs" -name="note*"
+chown -path="/docs/note_moved.txt" -user=root
+chmod -path="/docs/note_moved.txt" -ugo=644
+remove -path="/docs/data.bin"
+journaling -id=291A
+logout
+
+# --- Comandos para la partición 292A (ParticionLogica1, EXT2) ---
+login -user=root -pass=123 -id=292A
+cat -file="/users.txt"
+mkdir -path="/files"
+mkdir -path="/files/backups/archive" -p
+mkfile -path="/files/test.txt" -cont="Archivo en ParticionLogica1."
+mkfile -path="/files/empty.bin" -size=128
+cat -file="/files/test.txt"
+# Nuevos comandos
+edit -path="/files/test.txt" -cont="Contenido actualizado."
+rename -path="/files/test.txt" -name=test_updated.txt
+copy -path="/files/test_updated.txt" -dest="/files/backups/test_copy.txt"
+move -path="/files/backups/test_copy.txt" -dest="/files/test_moved.txt"
+find -path="/files" -name="*test*"
+chown -path="/files/test_moved.txt" -user=root
+chmod -path="/files/test_moved.txt" -ugo=664
+remove -path="/files/empty.bin"
+logout
+
+# --- Comandos para la partición 291B (ParticionA, EXT3) ---
+login -user=root -pass=123 -id=291B
+cat -file="/users.txt"
+mkdir -path="/data"
+mkdir -path="/data/logs/errors" -p
+mkfile -path="/data/log.txt" -cont="Log de prueba en ParticionA."
+mkfile -path="/data/sample.bin" -size=512
+cat -file="/data/log.txt"
+# Nuevos comandos
+edit -path="/data/log.txt" -cont="Log actualizado en ParticionA."
+rename -path="/data/log.txt" -name=log_updated.txt
+copy -path="/data/log_updated.txt" -dest="/data/logs/log_copy.txt"
+move -path="/data/logs/log_copy.txt" -dest="/data/log_moved.txt"
+find -path="/data" -name="log*"
+chown -path="/data/log_moved.txt" -user=root
+chmod -path="/data/log_moved.txt" -ugo=644
+remove -path="/data/sample.bin"
+journaling -id=291B
+logout
+
+# Desmontar particiones
+unmount -id=291A
+unmount -id=292A
+unmount -id=291B
+
+# Mostrar particiones montadas (debería estar vacío)
+mounted
