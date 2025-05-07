@@ -19,10 +19,10 @@ function App() {
 
    // Determinar la URL del backend según el entorno
 
-const BACKEND_URL = window.location.hostname.includes('3.145.6.97') || 
+const BACKEND_URL = window.location.hostname.includes('18.119.17.227') || 
                    window.location.hostname === 'ec2-3-145-6-97.us-east-2.compute.amazonaws.com' ||
                    window.location.hostname.includes('s3-website') // Detectar cuando se ejecuta desde S3
-                   ? 'http://3.145.6.97:8080' 
+                   ? 'http://18.119.17.227:8080' 
                    : 'http://localhost:8080';
   
   // Ejecutar comandos genéricos
