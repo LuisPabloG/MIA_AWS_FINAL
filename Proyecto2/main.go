@@ -71,8 +71,8 @@ func main() {
 		AllowedOrigins: []string{
 			"http://localhost:3000",
 			"http://localhost:8080",
-			"http://3.145.6.97",
-			"http://3.145.6.97:3000",
+			"http://18.119.17.227",
+			"http://18.119.17.227:3000",
 			"http://mia-202200129.s3-website.us-east-2.amazonaws.com",
 		},
 		AllowedMethods:   []string{http.MethodPost, http.MethodOptions},
@@ -82,7 +82,7 @@ func main() {
 	}).Handler(mux)
 
 	// Iniciar el servidor
-	fmt.Println("Servidor iniciado en http://3.145.6.97:8080")
+	fmt.Println("Servidor iniciado en http://18.119.17.227:8080")
 	if err := http.ListenAndServe(":8080", corsHandler); err != nil {
 		fmt.Printf("Error al iniciar el servidor: %v\n", err)
 	}

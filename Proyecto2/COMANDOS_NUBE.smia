@@ -1,0 +1,285 @@
+# Creación de discos
+mkdisk -size=20 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -fit=FF
+mkdisk -size=15 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -fit=BF
+mkdisk -size=10 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco3.mia" -fit=WFs
+
+# Eliminación de un disco
+rmdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco3.mia"
+
+# Creación de particiones en Disco1
+fdisk -size=5000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -type=P -fit=BF
+fdisk -size=6000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion2 -type=E -fit=FF
+
+# Creación de una partición lógica dentro de la extendida en Disco1
+fdisk -size=2000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -type=L -fit=WF
+
+# Creación de particiones en Disco2
+fdisk -size=4000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA -type=P -fit=FF
+fdisk -size=4000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -type=P -fit=BF
+
+# Montaje de particiones
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB
+
+# Mostrar particiones montadas
+mounted
+
+# Formatear las particiones con MKFS (EXT2)
+mkfs -id=291A -type=full
+mkfs -id=292A -type=full
+mkfs -id=291B -type=full
+mkfs -id=292B -type=full
+
+# --- Comandos para la partición 291A ---
+login -user=root -pass=123 -id=291A
+cat -file="/users.txt"
+mkgrp -name=admins
+mkusr -user=john -pass=456 -grp=admins
+chgrp -user=john -grp=root
+cat -file="/users.txt"
+rmusr -user=john
+rmgrp -name=admins
+cat -file="/users.txt"
+mkdir -path="/docs"
+mkdir -path="/docs/projects/subproject" -p
+mkfile -path="/docs/note.txt" -cont="Este es un archivo de prueba."
+mkfile -path="/docs/data.bin" -size=256
+cat -file="/docs/note.txt"
+logout
+
+# --- Comandos para la partición 291B ---
+login -user=root -pass=123 -id=291B
+mkdir -path="/files"
+mkdir -path="/files/backups/archive" -p
+mkfile -path="/files/test.txt" -cont="Archivo en ParticionA."
+mkfile -path="/files/empty.bin" -size=128
+cat -file="/files/test.txt"
+logout
+
+# --- Comandos para la partición 292A ---
+login -user=root -pass=123 -id=292A
+cat -file="/users.txt"
+logout
+
+# --- Comandos para la partición 292B ---
+login -user=root -pass=123 -id=292B
+cat -file="/users.txt"
+mkdir -path="/data"
+mkdir -path="/data/logs/errors" -p
+mkfile -path="/data/log.txt" -cont="Log de prueba en ParticionB."
+mkfile -path="/data/sample.bin" -size=512
+cat -file="/data/log.txt"
+logout
+
+
+
+
+
+
+# Creación de discos
+mkdisk -size=20 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -fit=FF
+mkdisk -size=15 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -fit=BF
+mkdisk -size=10 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco3.mia" -fit=WF
+
+# Eliminación de un disco
+rmdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco3.mia"
+
+# Creación de particiones en Disco1
+fdisk -size=5000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -type=P -fit=BF
+fdisk -size=6000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion2 -type=E -fit=FF
+
+# Creación de una partición lógica dentro de la extendida en Disco1
+fdisk -size=2000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -type=L -fit=WF
+
+# Creación de particiones en Disco2
+fdisk -size=4000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA -type=P -fit=FF
+fdisk -size=4000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -type=P -fit=BF
+
+# Montaje de particiones
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB
+
+# Mostrar particiones montadas
+mounted
+
+# Formatear las particiones con MKFS (EXT3)
+mkfs -id=291A -fs=ext3
+mkfs -id=292A -fs=ext3
+mkfs -id=291B -fs=ext3
+mkfs -id=292B -fs=ext3
+
+# Modificar tamaño de particiones con FDISK (ADD)
+fdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -add=1000
+fdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -add=500
+
+# --- Comandos para la partición 291A ---
+login -user=root -pass=123 -id=291A
+cat -file="/users.txt"
+mkgrp -name=admins
+mkusr -user=john -pass=456 -grp=admins
+chgrp -user=john -grp=root
+cat -file="/users.txt"
+rmusr -user=john
+rmgrp -name=admins
+cat -file="/users.txt"
+mkdir -path="/docs"
+mkdir -path="/docs/projects/subproject" -p
+mkfile -path="/docs/note.txt" -cont="Este es un archivo de prueba."
+mkfile -path="/docs/data.bin" -size=256
+cat -file="/docs/note.txt"
+logout
+#unmount -id=291A
+
+# --- Comandos para la partición 291B ---
+login -user=root -pass=123 -id=291B
+mkdir -path="/files"
+mkdir -path="/files/backups/archive" -p
+mkfile -path="/files/test.txt" -cont="Archivo en ParticionA."
+mkfile -path="/files/empty.bin" -size=128
+cat -file="/files/test.txt"
+logout
+#unmount -id=291B
+
+# --- Comandos para la partición 292A ---
+login -user=root -pass=123 -id=292A
+cat -file="/users.txt"
+logout
+#unmount -id=292A
+
+# --- Comandos para la partición 292B ---
+login -user=root -pass=123 -id=292B
+cat -file="/users.txt"
+mkdir -path="/data"
+mkdir -path="/data/logs/errors" -p
+mkfile -path="/data/log.txt" -cont="Log de prueba en ParticionB."
+mkfile -path="/data/sample.bin" -size=512
+cat -file="/data/log.txt"
+logout
+#unmount -id=292B
+
+# Eliminar una partición con FDISK (DELETE)
+fdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -delete=full
+
+# Mostrar particiones montadas (para verificar que ParticionB fue eliminada)
+mounted
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+# Creación de discos
+mkdisk -size=20 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -fit=FF
+mkdisk -size=15 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -fit=BF
+mkdisk -size=10 -unit=M -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco3.mia" -fit=WF
+
+# Eliminación de un disco
+rmdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco3.mia"
+
+# Creación de particiones en Disco1
+fdisk -size=5000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -type=P -fit=BF
+fdisk -size=6000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion2 -type=E -fit=FF
+
+# Creación de una partición lógica dentro de la extendida en Disco1
+fdisk -size=2000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -type=L -fit=WF
+
+# Creación de particiones en Disco2
+fdisk -size=4000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA -type=P -fit=FF
+fdisk -size=4000 -unit=K -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -type=P -fit=BF
+
+# Montaje de particiones
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionA
+mount -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB
+
+# Mostrar particiones montadas
+mounted
+
+# Formatear las particiones con MKFS (EXT3)
+mkfs -id=291A -fs=ext3
+mkfs -id=292A -fs=ext3
+mkfs -id=291B -fs=ext3
+mkfs -id=292B -fs=ext3
+
+# Modificar tamaño de particiones con FDISK (ADD)
+fdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=Particion1 -add=1000
+fdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco1.mia" -name=ParticionLogica1 -add=500
+
+# --- Comandos para la partición 291A ---
+login -user=root -pass=123 -id=291A
+#cat -file="/users.txt" -id=291A
+mkgrp -name=admins
+mkusr -user=john -pass=456 -grp=admins
+chgrp -user=john -grp=root
+#cat -file="/users.txt" -id=291A
+rmusr -user=john
+rmgrp -name=admins
+#cat -file="/users.txt" -id=291A
+mkdir -path="/docs"
+mkdir -path="/docs/projects/subproject" -p
+mkfile -path="/docs/note.txt" -cont="Este es un archivo de prueba."
+mkfile -path="/docs/data.bin" -size=256
+#cat -file="/docs/note.txt" -id=291A
+# Nuevos comandos
+copy -src="/docs/note.txt" -dest="/docs/note_copy.txt" -id=291A # Copiar archivo
+move -src="/docs/note_copy.txt" -dest="/docs/projects/note_copy.txt" -id=291A # Mover archivo
+rename -path="/docs/note.txt" -newname="note_updated.txt" -id=291A # Renombrar archivo
+edit -path="/docs/note_updated.txt" -cont="Archivo editado en Particion1." -id=291A # Editar contenido
+remove -path="/docs/data.bin" -id=291A # Eliminar archivo
+logout
+#unmount -id=291A
+
+# --- Comandos para la partición 291B ---
+login -user=root -pass=123 -id=291B
+mkdir -path="/files"
+mkdir -path="/files/backups/archive" -p
+mkfile -path="/files/test.txt" -cont="Archivo en ParticionA."
+mkfile -path="/files/empty.bin" -size=128
+#cat -file="/files/test.txt" -id=291B
+# Nuevos comandos
+copy -src="/files/test.txt" -dest="/files/backups/test_backup.txt" -id=291B # Copiar archivo
+move -src="/files/test.txt" -dest="/files/backups/archive/test.txt" -id=291B # Mover archivo
+rename -path="/files/backups/test_backup.txt" -newname="test_backup_updated.txt" -id=291B # Renombrar archivo
+edit -path="/files/backups/test_backup_updated.txt" -cont="Backup editado." -id=291B # Editar contenido
+remove -path="/files/empty.bin" -id=291B # Eliminar archivo
+logout
+#unmount -id=291B
+
+# --- Comandos para la partición 292A ---
+login -user=root -pass=123 -id=292A
+#cat -file="/users.txt" -id=292A
+# Nuevos comandos
+mkdir -path="/logs"
+mkfile -path="/logs/error.log" -cont="Error inicial."
+copy -src="/logs/error.log" -dest="/logs/error_copy.log" -id=292A # Copiar archivo
+move -src="/logs/error_copy.log" -dest="/logs/archive/error_copy.log" -id=292A # Mover archivo (crea /logs/archive si es necesario)
+rename -path="/logs/error.log" -newname="error_updated.log" -id=292A # Renombrar archivo
+edit -path="/logs/error_updated.log" -cont="Error actualizado." -id=292A # Editar contenido
+remove -path="/logs/archive/error_copy.log" -id=292A # Eliminar archivo movido
+logout
+#unmount -id=292A
+
+# --- Comandos para la partición 292B ---
+login -user=root -pass=123 -id=292B
+#cat -file="/users.txt" -id=292B
+mkdir -path="/data"
+mkdir -path="/data/logs/errors" -p
+mkfile -path="/data/log.txt" -cont="Log de prueba en ParticionB."
+mkfile -path="/data/sample.bin" -size=512
+#cat -file="/data/log.txt" -id=292B
+# Nuevos comandos
+copy -src="/data/log.txt" -dest="/data/logs/log_copy.txt" -id=292B # Copiar archivo
+move -src="/data/log_copy.txt" -dest="/data/logs/errors/log_copy.txt" -id=292B # Mover archivo
+rename -path="/data/log.txt" -newname="log_updated.txt" -id=292B # Renombrar archivo
+edit -path="/data/log_updated.txt" -cont="Log editado en ParticionB." -id=292B # Editar contenido
+remove -path="/data/sample.bin" -id=292B # Eliminar archivo
+logout
+#unmount -id=292B
+
+# Eliminar una partición con FDISK (DELETE)
+fdisk -path="/home/ubuntu/Documentos/PruebaProyecto2/Disco2.mia" -name=ParticionB -delete=full
+
+# Mostrar particiones montadas (para verificar que ParticionB fue eliminada)
+mounted
